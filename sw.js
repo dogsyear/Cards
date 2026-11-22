@@ -1,5 +1,5 @@
 // Offline support: serve from cache, refresh the cache in the background.
-const CACHE = 'cards-v1';
+const CACHE = 'cards-v2';
 const FILES = ['./', 'index.html', 'manifest.json', 'vendor/zxing.min.js', 'vendor/bwip-js.min.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
