@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cards</title>
+<meta name="theme-color" content="#16181d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cards">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+  :root {
+    --bg: #16181d; --panel: #22252c; --panel2: #2c3038; --text: #f3f4f6; --muted: #9aa0ab;
+    --accent: #4f8cff; --danger: #ff5a5f; --radius: 16px;
+    --top: env(safe-area-inset-top, 0px); --bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+  body { min-height: 100vh; padding: calc(var(--top) + 8px) 16px calc(var(--bottom) + 24px); }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  input, select { font: inherit; color: var(--text); background: var(--panel2); border: 1px solid transparent;
+    border-radius: 12px; padding: 12px 14px; width: 100%; outline: none; -webkit-appearance: none; appearance: none; }
+  input:focus, select:focus { border-color: var(--accent); }
+  .hidden { display: none !important; }
+
+  /* Header */
+  header { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px; }
+  header h1 { font-size: 32px; margin: 0; letter-spacing: -0.5px; }
+  .icon-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--panel); display: grid; place-items: center; font-size: 24px; }
+  .icon-btn.primary { background: var(--accent); color: #fff; font-size: 28px; line-height: 1; }
+  .header-btns { display: flex; gap: 10px; }
+
+  .search { position: relative; margin-bottom: 18px; }
+  .search input { padding-left: 40px; background: var(--panel); }
+  .search svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); opacity: .55; }
+
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 18px 4px 8px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tile { position: relative; height: 96px; border-radius: var(--radius); padding: 12px 14px; text-align: left;
+    color: #fff; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+  .tile .initial { position: absolute; right: -6px; top: -18px; font-size: 92px; font-weight: 800; opacity: .16; line-height: 1; }
+  .tile .name { font-weight: 700; font-size: 18px; line-height: 1.15; word-break: break-word;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tile .star { position: absolute; left: 12px; top: 9px; font-size: 15px; opacity: .9; }
+  .tile:active { transform: scale(.97); }
+  .tile.has-logo { background: #fff !important; padding: 0; justify-content: flex-start; height: 118px; }
+  .tile.has-logo img { width: 100%; height: 86px; object-fit: contain; padding: 10px 14px 4px; display: block; }
+  .tile.has-logo .name { font-size: 14px; color: #111; text-align: center; padding: 0 8px 8px; -webkit-line-clamp: 1; }
+  .tile.has-logo .star { color: #f5a623; }
+  .logo-row { display: flex; align-items: center; gap: 12px; }
+  .logo-row .logo-box { width: 84px; height: 56px; border-radius: 10px; background: #fff; display: grid; place-items: center; overflow: hidden; flex: none; }
+  .logo-row .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .logo-row .logo-box.none { background: var(--panel2); color: var(--muted); font-size: 12px; }
+  .empty { text-align: center; color: var(--muted); padding: 60px 20px; }
+  .empty b { color: var(--text); display: block; font-size: 20px; margin-bottom: 6px; }
+
+  /* Sheets */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 10; display: flex; align-items: flex-end; }
+  .sheet { background: var(--panel); width: 100%; max-height: 92vh; overflow-y: auto; border-radius: 22px 22px 0 0;
+    padding: 18px 18px calc(var(--bottom) + 22px); animation: up .22s ease-out; }
+  @keyframes up { from { transform: translateY(30px); opacity: .6; } to { transform: none; opacity: 1; } }
+  .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .sheet-head h3 { margin: 0; font-size: 20px; }
+  .link { color: var(--accent); font-weight: 600; padding: 6px 2px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 14px 4px 6px; }
+  .source-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .big-btn { background: var(--panel2); border-radius: 14px; padding: 14px 10px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .big-btn span { font-size: 26px; }
+  .msg { font-size: 14px; border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+  .msg.ok { background: rgba(52,199,89,.15); color: #6ee38f; }
+  .msg.warn { background: rgba(255,159,10,.15); color: #ffc46b; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  .chip { padding: 8px 14px; border-radius: 999px; color: #fff; font-weight: 600; font-size: 15px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+  .swatch { width: 36px; height: 36px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255,255,255,.15); }
+  .swatch.on { box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px #fff; }
+  .row { display: flex; align-items: center; justify-content: space-between; background: var(--panel2); border-radius: 12px; padding: 12px 14px; margin-top: 14px; }
+  .toggle { width: 51px; height: 31px; border-radius: 16px; background: #555; position: relative; transition: .2s; flex: none; }
+  .toggle::after { content: ""; position: absolute; width: 27px; height: 27px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: .2s; }
+  .toggle.on { background: #34c759; } .toggle.on::after { left: 22px; }
+  .thumb { margin-top: 10px; display: flex; gap: 12px; align-items: center; }
+  .thumb img { width: 64px; height: 110px; object-fit: cover; border-radius: 8px; }
+  .actions { display: grid; gap: 10px; margin-top: 22px; }
+  .btn { border-radius: 14px; padding: 15px; font-weight: 700; background: var(--accent); color: #fff; width: 100%; }
+  .btn.secondary { background: var(--panel2); color: var(--text); }
+  .btn.danger { background: transparent; color: var(--danger); }
+  .btn:disabled { opacity: .4; }
+  .note { color: var(--muted); font-size: 14px; margin: 14px 4px 0; }
+
+  /* Card display */
+  #show { position: fixed; inset: 0; z-index: 20; background: #fff; color: #111; display: flex; flex-direction: column;
+    padding: calc(var(--top) + 10px) 18px calc(var(--bottom) + 16px); }
+  #show .bar { display: flex; justify-content: space-between; align-items: center; }
+  #show .bar button { color: #0a62ff; font-weight: 600; padding: 8px 4px; font-size: 17px; }
+  #show .title { text-align: center; margin: 10px 0 0; }
+  #show .title .pill { display: inline-block; padding: 6px 16px; border-radius: 999px; color: #fff; font-weight: 700; font-size: 20px; }
+  #show .code { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; min-height: 0; }
+  #show canvas { max-width: 100%; height: auto; image-rendering: pixelated; }
+  #show canvas.square { width: min(78vw, 46vh); }
+  #show canvas.linear { width: 100%; max-height: 36vh; }
+  #show .number { font: 600 24px/1.2 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 1.5px; text-align: center; word-break: break-all; user-select: all; -webkit-user-select: all; }
+  #show img.shot { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; }
+  #show .foot { display: flex; justify-content: center; gap: 10px; }
+  #show .foot button { background: #f0f1f4; color: #111; border-radius: 999px; padding: 10px 18px; font-weight: 600; font-size: 15px; }
+  #show .hint { text-align: center; color: #888; font-size: 13px; margin-top: 10px; }
+
+  /* Scanner */
+  #scanner { position: fixed; inset: 0; z-index: 30; background: #000; display: flex; flex-direction: column; }
+  #scanner video { flex: 1; width: 100%; object-fit: cover; min-height: 0; }
+  #scanner .frame { position: absolute; left: 8%; right: 8%; top: 32%; height: 26%; border: 3px solid rgba(255,255,255,.85); border-radius: 18px; pointer-events: none; }
+  #scanner .scan-bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 18px calc(var(--bottom) + 22px); text-align: center; background: linear-gradient(transparent, rgba(0,0,0,.8)); color: #fff; }
+  #scanner .scan-bar p { margin: 0 0 14px; }
+  .toast { position: fixed; left: 50%; bottom: calc(var(--bottom) + 30px); transform: translateX(-50%); background: #fff; color: #111;
+    padding: 10px 18px; border-radius: 999px; font-weight: 600; z-index: 50; box-shadow: 0 6px 20px rgba(0,0,0,.3); font-size: 15px; }
+</style>
+</head>
+<body>
+
+<!-- Home -->
+<main id="home">
+  <header>
+    <h1>Cards</h1>
+    <div class="header-btns">
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings">⋯</button>
+      <button class="icon-btn primary" id="addBtn" aria-label="Add card">+</button>
+    </div>
+  </header>
+  <div class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="search" type="search" placeholder="Search cards" autocomplete="off" autocorrect="off">
+  </div>
+  <div id="list"></div>
+</main>
+
+<!-- Card display -->
+<div id="show" class="hidden">
+  <div class="bar">
+    <button id="showDone">Done</button>
+    <button id="showEdit">Edit</button>
+  </div>
+  <div class="title"><span class="pill" id="showName"></span></div>
+  <div class="code" id="showCode"></div>
+  <div class="foot" id="showFoot"></div>
+  <div class="hint">Turn your screen brightness up if the till struggles to read it.</div>
+</div>
+
+<!-- Add / edit sheet -->
+<div id="editOverlay" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button class="link" id="editCancel">Cancel</button>
+      <h3 id="editTitle">New card</h3>
+      <button class="link" id="editSave">Save</button>
+    </div>
+
+    <div class="source-btns">
+      <button class="big-btn" id="scanBtn"><span>📷</span>Scan card</button>
+      <button class="big-btn" id="shotBtn"><span>🖼️</span>Use screenshot</button>
+    </div>
+    <input type="file" id="shotInput" accept="image/*" class="hidden">
+    <div id="editMsg"></div>
+    <div id="thumbWrap"></div>
+
+    <div id="quickWrap">
+      <label>Quick pick</label>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <label for="fName">Store</label>
+    <input id="fName" placeholder="e.g. Tesco Clubcard" autocomplete="off">
+
+    <label>Logo (shown in the list)</label>
+    <div class="logo-row">
+      <div class="logo-box none" id="logoBox">None</div>
+      <div><button class="link" id="logoBtn">Add logo</button><br><button class="link hidden" id="logoRemove" style="color:var(--danger)">Remove</button></div>
+    </div>
+    <input type="file" id="logoInput" accept="image/*" class="hidden">
+
+    <label for="fNumber">Card number</label>
+    <input id="fNumber" placeholder="Scan, use a screenshot, or type it" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+    <label for="fFormat">Barcode type</label>
+    <select id="fFormat"></select>
+
+    <label>Colour (used when there's no logo)</label>
+    <div class="swatches" id="swatches"></div>
+
+    <div class="row"><span>★ Favourite (shows at the top)</span><button class="toggle" id="fFav" aria-label="Favourite"></button></div>
+
+    <div class="actions">
+      <button class="btn danger hidden" id="editDelete">Delete card</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings sheet -->
+<div id="setOverlay" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-head">
+      <span></span><h3>Settings</h3><button class="link" id="setDone">Done</button>
+    </div>
+    <div class="actions" style="margin-top:6px">
+      <button class="btn secondary" id="exportBtn">Back up / share all cards</button>
+      <button class="btn secondary" id="importBtn">Restore or add from a backup</button>
+      <input type="file" id="importInput" accept=".json,application/json" class="hidden">
+    </div>
+    <p class="note">Your cards are stored only on this phone. To copy them to another phone, tap “Back up / share all cards”, send the file (AirDrop, Messages or email), then on the other phone open Cards → ⋯ → “Restore or add from a backup” and pick the file. Cards that are already there won't be added twice.</p>
+    <p class="note" id="countNote"></p>
+  </div>
+</div>
+
+<!-- Scanner -->
+<div id="scanner" class="hidden">
+  <video id="video" playsinline muted autoplay></video>
+  <div class="frame"></div>
+  <div class="scan-bar">
+    <p>Line up the barcode or QR code inside the box</p>
+    <button class="btn secondary" id="scanCancel">Cancel</button>
+  </div>
+</div>
+
+<script src="vendor/zxing.min.js"></script>
+<script src="vendor/bwip-js.min.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Barcode formats ----------
+  // key = zxing format name, bcid = bwip-js renderer id
+  const FORMATS = [
+    { key: 'CODE_128', label: 'Standard barcode (Code 128)', bcid: 'code128', square: false },
+    { key: 'EAN_13', label: 'EAN-13 (13 digits)', bcid: 'ean13', square: false },
+    { key: 'EAN_8', label: 'EAN-8 (8 digits)', bcid: 'ean8', square: false },
+    { key: 'UPC_A', label: 'UPC-A (12 digits)', bcid: 'upca', square: false },
+    { key: 'UPC_E', label: 'UPC-E', bcid: 'upce', square: false },
+    { key: 'CODE_39', label: 'Code 39', bcid: 'code39', square: false },
+    { key: 'CODE_93', label: 'Code 93', bcid: 'code93', square: false },
+    { key: 'ITF', label: 'ITF (Interleaved 2 of 5)', bcid: 'interleaved2of5', square: false },
+    { key: 'CODABAR', label: 'Codabar', bcid: 'rationalizedCodabar', square: false },
+    { key: 'QR_CODE', label: 'QR code', bcid: 'qrcode', square: true },
+    { key: 'AZTEC', label: 'Aztec code', bcid: 'azteccode', square: true },
+    { key: 'DATA_MATRIX', label: 'Data Matrix', bcid: 'datamatrix', square: true },
+    { key: 'PDF_417', label: 'PDF417', bcid: 'pdf417', square: false },
+    { key: 'NONE', label: 'No barcode (number only)', bcid: null, square: false },
+  ];
+  const fmt = k => FORMATS.find(f => f.key === k) || FORMATS[0];
+
+  const COLOURS = ['#00539f', '#e31837', '#f68b1f', '#7a2b8f', '#0d7a3e', '#00a3e0',
+                   '#c8102e', '#5c6670', '#1b1b1b', '#d6336c', '#8b5a2b', '#2f9e8f'];
+  const STORES = [
+    { name: 'myWaitrose', color: '#4e7d2a' },
+    { name: 'Boots Advantage', color: '#05054b' },
+    { name: "Sainsbury's Nectar", color: '#f06c00' },
+    { name: 'M&S Sparks', color: '#1b1b1b' },
+  ];
+  const colourFor = name => { const st = STORES.find(x => x.name.toLowerCase() === (name || '').trim().toLowerCase()); if (st) return st.color; let h = 0; for (const c of (name || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLOURS[h % COLOURS.length]; };
+
+  // ---------- Storage (IndexedDB) ----------
+  let db;
+  const openDB = () => new Promise((res, rej) => {
+    const r = indexedDB.open('cards-db', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('cards', { keyPath: 'id' });
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+  const tx = (mode, fn) => new Promise((res, rej) => {
+    const t = db.transaction('cards', mode); const s = t.objectStore('cards');
+    const out = fn(s); t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error);
+  });
+  const getAll = () => tx('readonly', s => s.getAll());
+  const put = card => tx('readwrite', s => s.put(card));
+  const del = id => tx('readwrite', s => s.delete(id));
+
+  let cards = [];
+  const $ = id => document.getElementById(id);
+  const toast = text => { const t = document.createElement('div'); t.className = 'toast'; t.textContent = text; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  // ---------- Home list ----------
+  function tile(card) {
+    const b = document.createElement('button');
+    b.className = 'tile';
+    b.style.background = card.color || colourFor(card.name);
+    const ini = document.createElement('span'); ini.className = 'initial'; ini.textContent = (card.name || '?').trim().charAt(0).toUpperCase();
+    const nm = document.createElement('span'); nm.className = 'name'; nm.textContent = card.name || 'Unnamed';
+    if (card.logo) {
+      b.classList.add('has-logo');
+      const img = document.createElement('img'); img.src = card.logo; img.alt = '';
+      b.append(img, nm);
+    } else b.append(ini, nm);
+    if (card.fav) { const s = document.createElement('span'); s.className = 'star'; s.textContent = '★'; b.append(s); }
+    b.onclick = () => showCard(card);
+    return b;
+  }
+  function section(title, list, root) {
+    if (!list.length) return;
+    if (title) { const h = document.createElement('h2'); h.textContent = title; root.append(h); }
+    const g = document.createElement('div'); g.className = 'grid'; list.forEach(c => g.append(tile(c))); root.append(g);
+  }
+  function render() {
+    const root = $('list'); root.textContent = '';
+    const q = $('search').value.trim().toLowerCase();
+    const sorted = [...cards].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'en-GB', { sensitivity: 'base' }));
+    if (!cards.length) {
+      root.innerHTML = '<div class="empty"><b>No cards yet</b>Tap + to add your first loyalty card.</div>';
+      return;
+    }
+    if (q) {
+      const hits = sorted.filter(c => (c.name || '').toLowerCase().includes(q) || (c.number || '').toLowerCase().includes(q));
+      if (!hits.length) { root.innerHTML = '<div class="empty">No cards match.</div>'; return; }
+      section(null, hits, root); return;
+    }
+    const favs = sorted.filter(c => c.fav), rest = sorted.filter(c => !c.fav);
+    section(favs.length ? 'Favourites' : null, favs, root);
+    section(favs.length ? 'All cards' : null, rest, root);
+  }
+
+  // ---------- Card display ----------
+  let wakeLock = null, current = null, showingShot = false;
+  async function keepAwake(on) {
+    try {
+      if (on && 'wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+      else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+    } catch (e) { /* not supported; fine */ }
+  }
+  function drawBarcode(canvas, card) {
+    const f = fmt(card.format);
+    const opts = { bcid: f.bcid, text: card.number, scale: 4, includetext: false, paddingwidth: 8, paddingheight: 8, backgroundcolor: 'FFFFFF' };
+    if (!f.square && f.bcid !== 'pdf417') opts.height = 22;
+    try { bwipjs.toCanvas(canvas, opts); canvas.className = f.square ? 'square' : 'linear'; return true; }
+    catch (e) {
+      // Number doesn't fit the chosen type (e.g. bad check digit) – fall back to a standard barcode
+      try { bwipjs.toCanvas(canvas, { ...opts, bcid: 'code128', height: 22 }); canvas.className = 'linear'; return true; }
+      catch (e2) { return false; }
+    }
+  }
+  function paintShow() {
+    const card = current, code = $('showCode'), foot = $('showFoot');
+    code.textContent = ''; foot.textContent = '';
+    const hasCode = card.number && card.format !== 'NONE';
+    const useShot = card.image && (showingShot || !card.number);
+    if (useShot) {
+      const img = document.createElement('img'); img.className = 'shot'; img.src = card.image; img.alt = 'Card screenshot'; code.append(img);
+    } else {
+      if (hasCode) { const cv = document.createElement('canvas'); if (drawBarcode(cv, card)) code.append(cv); }
+      if (card.number) { const n = document.createElement('div'); n.className = 'number'; n.textContent = card.number.length > 40 ? card.number.slice(0, 40) + '…' : card.number; code.append(n); }
+    }
+    if (card.image && card.number) {
+      const t = document.createElement('button'); t.textContent = useShot ? 'Show barcode' : 'Show screenshot';
+      t.onclick = () => { showingShot = !showingShot; paintShow(); }; foot.append(t);
+    }
+    const fav = document.createElement('button'); fav.textContent = card.fav ? '★ Favourite' : '☆ Favourite';
+    fav.onclick = async () => { card.fav = !card.fav; await put(card); paintShow(); render(); };
+    foot.append(fav);
+  }
+  function showCard(card) {
+    current = card; showingShot = false;
+    $('showName').textContent = card.name || 'Card';
+    $('showName').style.background = card.color || colourFor(card.name);
+    paintShow();
+    $('show').classList.remove('hidden');
+    keepAwake(true);
+    card.lastUsed = Date.now(); put(card);
+  }
+  $('showDone').onclick = () => { $('show').classList.add('hidden'); keepAwake(false); };
+  $('showEdit').onclick = () => { $('show').classList.add('hidden'); keepAwake(false); openEdit(current); };
+
+  // ---------- Add / edit ----------
+  let editing = null, draft = null;
+  $('fFormat').innerHTML = FORMATS.map(f => `<option value="${f.key}">${f.label}</option>`).join('');
+  function paintSwatches() {
+    const w = $('swatches'); w.textContent = '';
+    COLOURS.forEach(c => { const s = document.createElement('button'); s.className = 'swatch' + (draft.color === c ? ' on' : ''); s.style.background = c; s.setAttribute('aria-label', 'Colour ' + c);
+      s.onclick = () => { draft.color = c; draft.colorChosen = true; paintSwatches(); }; w.append(s); });
+  }
+  function paintThumb() {
+    const w = $('thumbWrap'); w.textContent = '';
+    if (!draft.image) return;
+    const d = document.createElement('div'); d.className = 'thumb';
+    const img = document.createElement('img'); img.src = draft.image;
+    const txt = document.createElement('div'); txt.innerHTML = '<div style="font-size:14px;color:var(--muted)">Screenshot saved with this card</div>';
+    const rm = document.createElement('button'); rm.className = 'link'; rm.textContent = 'Remove screenshot'; rm.onclick = () => { draft.image = null; paintThumb(); };
+    txt.append(rm); d.append(img, txt); w.append(d);
+  }
+  function paintLogo() {
+    const box = $('logoBox'); box.textContent = '';
+    box.classList.toggle('none', !draft.logo);
+    if (draft.logo) { const i = document.createElement('img'); i.src = draft.logo; box.append(i); } else box.textContent = 'None';
+    $('logoBtn').textContent = draft.logo ? 'Change logo' : 'Add logo';
+    $('logoRemove').classList.toggle('hidden', !draft.logo);
+  }
+  $('logoBtn').onclick = () => { $('logoInput').value = ''; $('logoInput').click(); };
+  $('logoRemove').onclick = () => { draft.logo = null; paintLogo(); };
+  $('logoInput').onchange = () => {
+    const file = $('logoInput').files[0]; if (!file) return;
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 500 / Math.max(img.naturalWidth, img.naturalHeight));
+      const cv = document.createElement('canvas'); cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      draft.logo = cv.toDataURL('image/png'); paintLogo(); URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  };
+  function setMsg(text, kind) { $('editMsg').innerHTML = text ? `<div class="msg ${kind}"></div>` : ''; if (text) $('editMsg').firstChild.textContent = text; }
+  function openEdit(card) {
+    editing = card || null;
+    draft = card ? { ...card, colorChosen: true } : { id: uid(), name: '', number: '', format: 'CODE_128', color: COLOURS[0], fav: false, image: null, logo: null, colorChosen: false };
+    $('editTitle').textContent = card ? 'Edit card' : 'New card';
+    $('fName').value = draft.name; $('fNumber').value = draft.number; $('fFormat').value = draft.format;
+    $('fFav').classList.toggle('on', !!draft.fav);
+    $('editDelete').classList.toggle('hidden', !card);
+    setMsg(''); paintSwatches(); paintThumb(); paintLogo();
+    const have = new Set(cards.map(c => c.name));
+    const picks = card ? [] : STORES.filter(st => !have.has(st.name));
+    $('quickWrap').classList.toggle('hidden', !picks.length);
+    $('chips').textContent = '';
+    picks.forEach(st => { const c = document.createElement('button'); c.className = 'chip'; c.style.background = st.color; c.textContent = st.name;
+      c.onclick = () => { $('fName').value = st.name; draft.color = st.color; draft.colorChosen = true; paintSwatches(); }; $('chips').append(c); });
+    $('editOverlay').classList.remove('hidden');
+  }
+  const closeEdit = () => $('editOverlay').classList.add('hidden');
+  $('fName').oninput = () => { if (!draft.colorChosen) { draft.color = colourFor($('fName').value); paintSwatches(); } };
+  $('fFav').onclick = () => { draft.fav = !draft.fav; $('fFav').classList.toggle('on', draft.fav); };
+  $('editCancel').onclick = closeEdit;
+  $('editSave').onclick = async () => {
+    draft.name = $('fName').value.trim(); draft.number = $('fNumber').value.trim(); draft.format = $('fFormat').value;
+    if (!draft.name) { setMsg('Give the card a store name.', 'warn'); $('fName').focus(); return; }
+    if (!draft.number && !draft.image) { setMsg('Add a card number, scan it, or use a screenshot.', 'warn'); return; }
+    const { colorChosen, ...card } = draft;
+    await put(card);
+    const i = cards.findIndex(c => c.id === card.id); if (i >= 0) cards[i] = card; else cards.push(card);
+    closeEdit(); render(); toast('Saved');
+  };
+  $('editDelete').onclick = async () => {
+    if (!confirm(`Delete “${editing.name}”?`)) return;
+    await del(editing.id); cards = cards.filter(c => c.id !== editing.id); closeEdit(); render(); toast('Deleted');
+  };
+  function applyResult(text, formatName, how) {
+    $('fNumber').value = text;
+    $('fFormat').value = FORMATS.some(f => f.key === formatName) ? formatName : 'CODE_128';
+    setMsg(`${how}: ${fmt($('fFormat').value).label}. Check the number below.`, 'ok');
+    if (!$('fName').value) $('fName').focus();
+  }
+
+  // ---------- Reading barcodes ----------
+  const Z = window.ZXing;
+  const hints = new Map();
+  hints.set(Z.DecodeHintType.TRY_HARDER, true);
+  hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, FORMATS.filter(f => f.key !== 'NONE').map(f => Z.BarcodeFormat[f.key]));
+  const formatName = r => Z.BarcodeFormat[r.getBarcodeFormat()];
+
+  // Try several crops/scales of an image – screenshots are big and the barcode is often small
+  function decodeImage(img) {
+    const reader = new Z.MultiFormatReader(); reader.setHints(hints);
+    const W = img.naturalWidth, H = img.naturalHeight;
+    const regions = [[0, 0, 1, 1], [0, 0.15, 1, 0.55], [0, 0.35, 1, 0.65], [0, 0, 1, 0.5], [0, 0.5, 1, 1], [0, 0.25, 1, 0.5], [0, 0.5, 1, 0.75]];
+    const widths = [1200, 800, 1600, 600];
+    const cv = document.createElement('canvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
+    for (const [x0, y0, x1, y1] of regions) {
+      for (const targetW of widths) {
+        const sw = W * (x1 - x0), sh = H * (y1 - y0), k = Math.min(1.5, targetW / sw);
+        cv.width = Math.round(sw * k); cv.height = Math.round(sh * k);
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.drawImage(img, W * x0, H * y0, sw, sh, 0, 0, cv.width, cv.height);
+        const src = new Z.HTMLCanvasElementLuminanceSource(cv);
+        for (const Bin of [Z.HybridBinarizer, Z.GlobalHistogramBinarizer]) {
+          try { const r = reader.decode(new Z.BinaryBitmap(new Bin(src)), hints); return r; } catch (e) { reader.reset(); }
+        }
+      }
+    }
+    return null;
+  }
+  function shrinkImage(img, max = 1600) {
+    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const cv = document.createElement('canvas'); cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    return cv.toDataURL('image/jpeg', 0.88);
+  }
+  $('shotBtn').onclick = () => { $('shotInput').value = ''; $('shotInput').click(); };
+  $('shotInput').onchange = () => {
+    const file = $('shotInput').files[0]; if (!file) return;
+    setMsg('Reading screenshot…', 'ok');
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      setTimeout(() => { // let the message paint first
+        const r = decodeImage(img);
+        draft.image = shrinkImage(img); paintThumb();
+        if (r) applyResult(r.getText(), formatName(r), 'Found the barcode in the screenshot');
+        else setMsg("Couldn't find a barcode in it, so the screenshot itself will be shown at the till. You can also type the number in.", 'warn');
+        URL.revokeObjectURL(url);
+      }, 30);
+    };
+    img.onerror = () => setMsg("That image couldn't be opened.", 'warn');
+    img.src = url;
+  };
+
+  let camReader = null;
+  $('scanBtn').onclick = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setMsg("This browser can't use the camera here. Try a screenshot or type the number.", 'warn'); return; }
+    $('scanner').classList.remove('hidden');
+    camReader = new Z.BrowserMultiFormatReader(hints, 250);
+    try {
+      await camReader.decodeFromConstraints({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } }, $('video'), (result) => {
+        if (result) { stopScan(); if (navigator.vibrate) navigator.vibrate(60); applyResult(result.getText(), formatName(result), 'Scanned'); }
+      });
+    } catch (e) {
+      stopScan(); setMsg('Camera not available. Allow camera access for Cards in Settings, or use a screenshot instead.', 'warn');
+    }
+  };
+  function stopScan() { if (camReader) { camReader.reset(); camReader = null; } $('scanner').classList.add('hidden'); }
+  $('scanCancel').onclick = stopScan;
+
+  // ---------- Settings: backup / restore ----------
+  $('settingsBtn').onclick = () => { $('countNote').textContent = `${cards.length} card${cards.length === 1 ? '' : 's'} on this phone.`; $('setOverlay').classList.remove('hidden'); };
+  $('setDone').onclick = () => $('setOverlay').classList.add('hidden');
+  $('exportBtn').onclick = async () => {
+    const data = JSON.stringify({ app: 'cards', version: 1, exported: new Date().toISOString(), cards }, null, 1);
+    const name = `cards-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    const file = new File([data], name, { type: 'application/json' });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Cards backup' }); return; }
+    } catch (e) { if (e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.append(a); a.click(); a.remove();
+  };
+  $('importBtn').onclick = () => { $('importInput').value = ''; $('importInput').click(); };
+  $('importInput').onchange = async () => {
+    const file = $('importInput').files[0]; if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      const incoming = Array.isArray(data) ? data : data.cards;
+      if (!Array.isArray(incoming)) throw new Error('bad');
+      let added = 0;
+      for (const c of incoming) {
+        if (!c || typeof c.name !== 'string') continue;
+        const dupe = cards.some(x => x.id === c.id || (x.name === c.name && (x.number || '') === (c.number || '')));
+        if (dupe) continue;
+        const card = { id: c.id || uid(), name: c.name, number: String(c.number || ''), format: FORMATS.some(f => f.key === c.format) ? c.format : 'CODE_128',
+          color: c.color || colourFor(c.name), fav: !!c.fav, image: typeof c.image === 'string' && c.image.startsWith('data:image/') ? c.image : null,
+          logo: typeof c.logo === 'string' && c.logo.startsWith('data:image/') ? c.logo : null };
+        await put(card); cards.push(card); added++;
+      }
+      render(); $('countNote').textContent = `${cards.length} cards on this phone.`;
+      toast(added ? `Added ${added} card${added === 1 ? '' : 's'}` : 'Nothing new to add');
+    } catch (e) { toast("That file isn't a Cards backup"); }
+  };
+
+  // ---------- Start ----------
+  $('addBtn').onclick = () => openEdit(null);
+  $('search').oninput = render;
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !$('show').classList.contains('hidden')) keepAwake(true); });
+
+  (async () => {
+    db = await openDB();
+    cards = await getAll();
+    render();
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  })();
+})();
+</script>
+</body>
+</html>
